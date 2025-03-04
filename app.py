@@ -3,16 +3,6 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
-from pyngrok import ngrok
-
-# Set Ngrok authentication token (Replace with your actual token)
-NGROK_AUTH_TOKEN = "2tq7y9AH9zfvbcCyfQpNtWrSnf3_5xaS9qN23NFvxyWBwtpqR"  # Replace with your actual Ngrok token
-ngrok.set_auth_token(NGROK_AUTH_TOKEN)
-
-# Start Ngrok tunnel for Streamlit (port 8501)
-ngrok.kill()  # Kills existing tunnels
-public_url = ngrok.connect(8501).public_url
-st.write(f"🌍 Public URL: [Click Here]({public_url})")
 
 def add_title_slide(prs, title, subtitle):
     """Add a title slide with a title and subtitle."""
