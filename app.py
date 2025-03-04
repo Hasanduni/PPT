@@ -48,23 +48,31 @@ def add_text_box_slide(prs, title, text):
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
 
-def add_table_slide(prs, title, data):
-    """Add a sample table slide."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
+def add_table_slide(prs, title):
+    """Add a table slide with sample data."""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])  # Ensure a compatible layout
     slide.shapes.title.text = title
 
-    rows, cols = len(data) + 1, len(data[0])
+    rows, cols = 4, 3  # Define number of rows and columns
     left, top, width, height = Inches(1), Inches(1.5), Inches(6), Inches(3)
-    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
 
-    # Set column headers dynamically
-    for j, header in enumerate(data[0].keys()):
-        table.cell(0, j).text = header
+    try:
+        table = slide.shapes.add_table(rows, cols, left, top, width, height).table
 
-    # Add data rows
-    for i, row in enumerate(data, start=1):
-        for j, (key, value) in enumerate(row.items()):
-            table.cell(i, j).text = str(value)
+        # Set headers
+        table.cell(0, 0).text = "Category"
+        table.cell(0, 1).text = "Value"
+        table.cell(0, 2).text = "Percentage"
+
+        # Sample Data
+        data = [("A", "100", "25%"), ("B", "150", "37.5%"), ("C", "150", "37.5%")]
+        for i, row_data in enumerate(data, start=1):
+            for j, value in enumerate(row_data):
+                table.cell(i, j).text = value
+
+    except Exception as e:
+        print(f"Error adding table slide: {e}")  # Debugging error message
+
 
 def add_image_slide(prs, title, img_path):
     """Add a slide with an image."""
