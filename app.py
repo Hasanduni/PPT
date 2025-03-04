@@ -48,26 +48,6 @@ def add_text_box_slide(prs, title, text):
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
 
-def add_bullet_points_slide(prs, title, text):
-    """Add a bullet points slide based on the description."""
-    slide = prs.slides.add_slide(prs.slide_layouts[1])
-    slide.shapes.title.text = title
-
-    if not slide.placeholders or len(slide.placeholders) < 2:
-        st.error("Error: The selected slide layout does not have a content placeholder.")
-        return
-
-    content = slide.placeholders[1].text_frame
-    if content is None:
-        st.error("Error: No text frame found in the placeholder.")
-        return
-
-    points = text.split('. ')
-    for point in points:
-        if point.strip():
-            content.add_paragraph(point.strip())
-
-
 def add_table_slide(prs, title, data):
     """Add a sample table slide."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
@@ -98,17 +78,9 @@ def generate_presentation(topic, description, image_file=None):
     add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
 
     add_text_box_slide(prs, "Introduction", description)
-    add_bullet_points_slide(prs, f"Key Points about {topic}", description)
     add_chart_slide(prs, "Bar Chart Representation")
     add_pie_chart_slide(prs, "Pie Chart Breakdown")
-
-    # Sample table data
-    table_data = [
-        {"Category": "A", "Value": 100, "Percentage": "25%"},
-        {"Category": "B", "Value": 150, "Percentage": "37.5%"},
-        {"Category": "C", "Value": 150, "Percentage": "37.5%"},
-    ]
-    add_table_slide(prs, "Data Table", table_data)
+    add_table_slide(prs, "Data Table")
 
     if image_file:
         add_image_slide(prs, "Uploaded Image", image_file)
@@ -116,6 +88,7 @@ def generate_presentation(topic, description, image_file=None):
     filename = "generated_presentation.pptx"
     prs.save(filename)
     return filename
+
 
 # Streamlit UI
 st.title("📊 PowerPoint Generator")
