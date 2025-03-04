@@ -53,22 +53,20 @@ def add_bullet_points_slide(prs, title, text):
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     slide.shapes.title.text = title
 
-    # Check if placeholder exists
-    if len(slide.placeholders) > 1:
-        content = slide.placeholders[1].text_frame
-    else:
-        textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
-        content = textbox.text_frame
+    if not slide.placeholders or len(slide.placeholders) < 2:
+        st.error("Error: The selected slide layout does not have a content placeholder.")
+        return
+
+    content = slide.placeholders[1].text_frame
+    if content is None:
+        st.error("Error: No text frame found in the placeholder.")
+        return
 
     points = text.split('. ')
-    
-    # Ensure the first paragraph is not empty
-    if points and points[0].strip():
-        content.text = points[0].strip()
-    
-    for point in points[1:]:
+    for point in points:
         if point.strip():
             content.add_paragraph(point.strip())
+
 
 def add_table_slide(prs, title, data):
     """Add a sample table slide."""
