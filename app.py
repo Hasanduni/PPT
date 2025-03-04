@@ -1,6 +1,6 @@
 import streamlit as st
 from pptx import Presentation
-from pptx.chart.data import CategoryChartData
+from pptx.chart.data import CategoryChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
 import os
@@ -12,7 +12,7 @@ def add_title_slide(prs, title, subtitle):
     slide.placeholders[1].text = subtitle
 
 def add_chart_slide(prs, title):
-    """Add a sample chart slide."""
+    """Add a sample bar chart slide."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
 
@@ -26,12 +26,59 @@ def add_chart_slide(prs, title):
     chart.has_legend = True
     chart.legend.position = XL_LEGEND_POSITION.BOTTOM
 
+def add_pie_chart_slide(prs, title):
+    """Add a sample pie chart slide."""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    slide.shapes.title.text = title
+
+    chart_data = CategoryChartData()
+    chart_data.categories = ['X', 'Y', 'Z']
+    chart_data.add_series('Series 1', (40, 30, 30))
+
+    chart = slide.shapes.add_chart(
+        XL_CHART_TYPE.PIE, Inches(1), Inches(1.5), Inches(6), Inches(4.5), chart_data
+    ).chart
+    chart.has_legend = True
+    chart.legend.position = XL_LEGEND_POSITION.RIGHT
+
 def add_text_box_slide(prs, title, text):
     """Add a slide with a text box."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
+
+def add_bullet_points_slide(prs, title, text):
+    """Add a bullet points slide based on the description."""
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    slide.shapes.title.text = title
+
+    content = slide.placeholders[1].text_frame
+    points = text.split('. ')
+    
+    for point in points:
+        if point.strip():
+            content.add_paragraph(point.strip())
+
+def add_table_slide(prs, title):
+    """Add a sample table slide."""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    slide.shapes.title.text = title
+
+    rows, cols = 4, 3
+    left, top, width, height = Inches(1), Inches(1.5), Inches(6), Inches(3)
+    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
+
+    # Set column headers
+    table.cell(0, 0).text = "Category"
+    table.cell(0, 1).text = "Value"
+    table.cell(0, 2).text = "Percentage"
+
+    # Add sample data
+    data = [("A", "100", "25%"), ("B", "150", "37.5%"), ("C", "150", "37.5%")]
+    for i, row in enumerate(data, start=1):
+        for j, value in enumerate(row):
+            table.cell(i, j).text = value
 
 def add_image_slide(prs, title, img_path):
     """Add a slide with an image."""
@@ -44,8 +91,11 @@ def generate_presentation(topic, description, image_file=None):
     prs = Presentation()
     add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
 
-    add_chart_slide(prs, "Sample Chart")
-    add_text_box_slide(prs, f"About {topic}", description)
+    add_text_box_slide(prs, "Introduction", description)
+    add_bullet_points_slide(prs, f"Key Points about {topic}", description)
+    add_chart_slide(prs, "Bar Chart Representation")
+    add_pie_chart_slide(prs, "Pie Chart Breakdown")
+    add_table_slide(prs, "Data Table")
 
     if image_file:
         add_image_slide(prs, "Uploaded Image", image_file)
