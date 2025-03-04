@@ -1,6 +1,6 @@
 import streamlit as st
 from pptx import Presentation
-from pptx.chart.data import CategoryChartData, XyChartData
+from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
 import os
@@ -53,32 +53,40 @@ def add_bullet_points_slide(prs, title, text):
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     slide.shapes.title.text = title
 
-    content = slide.placeholders[1].text_frame
+    # Check if placeholder exists
+    if len(slide.placeholders) > 1:
+        content = slide.placeholders[1].text_frame
+    else:
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
+        content = textbox.text_frame
+
     points = text.split('. ')
     
-    for point in points:
+    # Ensure the first paragraph is not empty
+    if points and points[0].strip():
+        content.text = points[0].strip()
+    
+    for point in points[1:]:
         if point.strip():
             content.add_paragraph(point.strip())
 
-def add_table_slide(prs, title):
+def add_table_slide(prs, title, data):
     """Add a sample table slide."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
 
-    rows, cols = 4, 3
+    rows, cols = len(data) + 1, len(data[0])
     left, top, width, height = Inches(1), Inches(1.5), Inches(6), Inches(3)
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
 
-    # Set column headers
-    table.cell(0, 0).text = "Category"
-    table.cell(0, 1).text = "Value"
-    table.cell(0, 2).text = "Percentage"
+    # Set column headers dynamically
+    for j, header in enumerate(data[0].keys()):
+        table.cell(0, j).text = header
 
-    # Add sample data
-    data = [("A", "100", "25%"), ("B", "150", "37.5%"), ("C", "150", "37.5%")]
+    # Add data rows
     for i, row in enumerate(data, start=1):
-        for j, value in enumerate(row):
-            table.cell(i, j).text = value
+        for j, (key, value) in enumerate(row.items()):
+            table.cell(i, j).text = str(value)
 
 def add_image_slide(prs, title, img_path):
     """Add a slide with an image."""
@@ -95,7 +103,14 @@ def generate_presentation(topic, description, image_file=None):
     add_bullet_points_slide(prs, f"Key Points about {topic}", description)
     add_chart_slide(prs, "Bar Chart Representation")
     add_pie_chart_slide(prs, "Pie Chart Breakdown")
-    add_table_slide(prs, "Data Table")
+
+    # Sample table data
+    table_data = [
+        {"Category": "A", "Value": 100, "Percentage": "25%"},
+        {"Category": "B", "Value": 150, "Percentage": "37.5%"},
+        {"Category": "C", "Value": 150, "Percentage": "37.5%"},
+    ]
+    add_table_slide(prs, "Data Table", table_data)
 
     if image_file:
         add_image_slide(prs, "Uploaded Image", image_file)
