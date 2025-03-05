@@ -1,57 +1,52 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+import requests
 from pptx import Presentation
 from pptx.util import Inches
-import chromedriver_autoinstaller
-import time
+from bs4 import BeautifulSoup
 
-def fetch_pricing_data_with_selenium():
-    """Fetch pricing data from Glama AI using Selenium."""
-    # Automatically download and install ChromeDriver
-    chromedriver_autoinstaller.install()
-
-    # Set up Chrome options to run in headless mode (no UI)
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Ensure the browser window doesn't pop up
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    # Start the WebDriver
-    driver = webdriver.Chrome(options=chrome_options)
-
-    # Open the Glama AI pricing page
-    url = "https://glama.ai/pricing"
-    driver.get(url)
-
-    # Wait for the page to fully load
-    time.sleep(5)
-
-    # Now we extract the pricing data
-    pricing_data = []
+# Function to fetch pricing data using ScraperAPI
+def fetch_pricing_data():
+    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"  # Replace with your actual ScraperAPI key
+    GLAMA_AI_URL = "https://glama.ai/pricing"
+    
+    api_url = f"https://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render=true&premium=true"
+    
     try:
-        plans = driver.find_elements(By.TAG_NAME, "h3")
-        prices = driver.find_elements(By.CLASS_NAME, "price")
-        descriptions = driver.find_elements(By.TAG_NAME, "p")
+        response = requests.get(api_url, timeout=10)
+        print(response.status_code)  # Debugging step to check status code
+        print(response.text[:500])  # Print the first 500 characters of the response for debugging
 
-        # Make sure to loop through all the extracted elements and store them in a list
-        for plan, price, description in zip(plans, prices, descriptions):
-            pricing_data.append([plan.text.strip(), description.text.strip(), price.text.strip()])
+        if response.status_code == 200:
+            return extract_data_from_html(response.text)  # Replace this with your actual data extraction function
+        else:
+            print(f"Failed with status code: {response.status_code}")
+            return None
     except Exception as e:
-        print(f"Error during data extraction: {e}")
-    finally:
-        driver.quit()  # Close the browser
+        print(f"Error: {e}")
+        return None
+
+# Function to extract pricing data from the HTML response using BeautifulSoup
+def extract_data_from_html(html):
+    soup = BeautifulSoup(html, "html.parser")
+    pricing_data = []
+    plans = soup.find_all("h3")
+    prices = soup.find_all("span", class_="price")
+    descriptions = soup.find_all("p")
+    
+    for i in range(min(len(plans), len(prices), len(descriptions))):
+        plan = plans[i].get_text(strip=True)
+        price = prices[i].get_text(strip=True)
+        description = descriptions[i].get_text(strip=True)
+        pricing_data.append([plan, description, price])
 
     return pricing_data
 
+# Function to generate a PowerPoint presentation with extracted data
 def generate_presentation(pricing_data):
-    """Generate PowerPoint presentation with extracted pricing data."""
     prs = Presentation()
     slide = prs.slides.add_slide(prs.slide_layouts[0])
     slide.shapes.title.text = "Glama AI Pricing Plans"
-    slide.placeholders[1].text = "Generated using Streamlit & Selenium"
+    slide.placeholders[1].text = "Generated using Streamlit & ScraperAPI"
 
     for plan, desc, price in pricing_data:
         slide = prs.slides.add_slide(prs.slide_layouts[5])
@@ -64,10 +59,10 @@ def generate_presentation(pricing_data):
     return filename
 
 # Streamlit UI
-st.title("📊 Glama AI Pricing PPT Generator (Selenium Version)")
+st.title("📊 Glama AI Pricing PPT Generator")
 
 if st.button("Fetch & Generate PPT"):
-    pricing_data = fetch_pricing_data_with_selenium()
+    pricing_data = fetch_pricing_data()
     
     if pricing_data:
         pptx_file = generate_presentation(pricing_data)
