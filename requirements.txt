@@ -1,4 +1,5 @@
 streamlit
 python-pptx
-python-dotenv==0.21.0 
+python-dotenv==0.21.0
 requests
+openai
