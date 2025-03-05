@@ -29,7 +29,13 @@ def generate_api_content(topic, description):
         'temperature': 0.7
     }
 
-    response = requests.post(glamaai_api_url, json=data, headers=headers, timeout=10)
+    try:
+        response = requests.post(glamaai_api_url, json=data, headers=headers, timeout=30)
+        response.raise_for_status()  # Raise HTTPError for bad responses
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return "Content generation failed. Please try again."
+
 
     if response.status_code == 200:
         return response.json()['text']  # Assuming the response contains a 'text' field
