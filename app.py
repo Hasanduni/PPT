@@ -8,20 +8,20 @@ SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
 GLAMA_AI_URL = "https://glama.ai/pricing"
 
 def fetch_pricing_data():
-    """Fetch pricing data using ScrapingBee."""
-    API_KEY = "YOUR_SCRAPINGBEE_API_KEY"
-    GLAMA_AI_URL = "https://glama.ai/pricing"
-
-    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={API_KEY}&url={GLAMA_AI_URL}&render_js=True"
-
+    """Fetch pricing data using ScraperAPI or ScrapingBee."""
     try:
         response = requests.get(api_url, timeout=10)
+        print(response.status_code)
+        print(response.text[:500])  # Print the first 500 characters of the response to debug
         if response.status_code == 200:
             return extract_data_from_html(response.text)
         else:
+            st.error(f"Failed with status code: {response.status_code}")
             return None
     except Exception as e:
+        st.error(f"Error: {e}")
         return None
+
 
 
 def extract_data_from_html(html):
