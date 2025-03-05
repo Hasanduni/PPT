@@ -5,31 +5,34 @@ from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
 import requests
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def get_text_from_huggingface(prompt):
     API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
     HF_API_KEY = os.getenv("HF_API_KEY")  # Load API key from environment variable
-    
+
     if not HF_API_KEY:
-        return "Error: API key is missing."
+        return "Error: API key is missing. Set HF_API_KEY in your .env file."
 
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     payload = {"inputs": prompt}
 
-    response = requests.post(API_URL, headers=headers, json=payload)
-
-    if response.status_code == 200:
-        try:
-            return response.json()[0]['summary_text']
-        except (KeyError, IndexError):
-            return "Error: Unexpected response format."
-    else:
-        return f"Error: {response.status_code} - {response.text}"
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
+        summary = response.json()
+        return summary[0].get("summary_text", "Error: Unexpected response format.")
+    except requests.exceptions.RequestException as e:
+        return f"Error: {str(e)}"
 
 def add_title_slide(prs, title, subtitle):
     slide = prs.slides.add_slide(prs.slide_layouts[0])
     slide.shapes.title.text = title
-    slide.placeholders[1].text = subtitle
+    if slide.placeholders and len(slide.placeholders) > 1:
+        slide.placeholders[1].text = subtitle
 
 def add_chart_slide(prs, title, chart_data):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
@@ -57,7 +60,7 @@ def generate_presentation(topic):
     chart_data.add_series('Series 1', (10, 20, 30))
     add_chart_slide(prs, "Sample Chart", chart_data)
     
-    add_text_box_slide(prs, "About " + topic, description)
+    add_text_box_slide(prs, f"About {topic}", description)
     
     filename = "generated_presentation.pptx"
     prs.save(filename)
@@ -70,6 +73,12 @@ if st.button("Generate PPT"):
     if topic:
         pptx_file = generate_presentation(topic)
         with open(pptx_file, "rb") as file:
-            st.download_button(label="📥 Download Presentation", data=file, file_name=pptx_file, mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+            st.download_button(
+                label="📥 Download Presentation", 
+                data=file, 
+                file_name=pptx_file, 
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            )
+        os.remove(pptx_file)  # Cleanup after download
     else:
         st.warning("⚠️ Please enter a topic.")
