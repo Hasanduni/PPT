@@ -8,18 +8,21 @@ SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
 GLAMA_AI_URL = "https://glama.ai/pricing"
 
 def fetch_pricing_data():
-    """Fetch pricing data using ScraperAPI instead of Selenium."""
-    api_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}"
-    
+    """Fetch pricing data using ScrapingBee."""
+    API_KEY = "YOUR_SCRAPINGBEE_API_KEY"
+    GLAMA_AI_URL = "https://glama.ai/pricing"
+
+    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={API_KEY}&url={GLAMA_AI_URL}&render_js=True"
+
     try:
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
-            html_content = response.text
-            return extract_data_from_html(html_content)
+            return extract_data_from_html(response.text)
         else:
             return None
     except Exception as e:
         return None
+
 
 def extract_data_from_html(html):
     """Extract pricing data from HTML using simple parsing."""
