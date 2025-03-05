@@ -2,24 +2,22 @@ import streamlit as st
 import requests
 from pptx import Presentation
 from pptx.util import Inches
-from bs4 import BeautifulSoup
 
 def fetch_pricing_data():
     """Fetch pricing data using ScraperAPI."""
-    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"  # Use your actual ScraperAPI key
+    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
     GLAMA_AI_URL = "https://glama.ai/pricing"
     
-    # ScraperAPI URL format
-    api_url = f"https://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render=true"
+    # Updated API URL with premium scraping enabled
+    api_url = f"https://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render=true&premium=true"
     
     try:
         response = requests.get(api_url, timeout=10)
-        print(f"Response Status Code: {response.status_code}")  # Check the status code
-        print(f"Response Headers: {response.headers}")  # Print response headers
-        print(f"Response Text: {response.text[:500]}")  # Print first 500 characters of response text for debugging
+        print(response.status_code)  # Debugging step to check status code
+        print(response.text[:500])  # Print the first 500 characters of the response for debugging
 
         if response.status_code == 200:
-            return extract_data_from_html(response.text)  # Replace this with your actual data extraction function
+            return extract_data_from_html(response.text)
         else:
             print(f"Failed with status code: {response.status_code}")
             return None
@@ -29,6 +27,7 @@ def fetch_pricing_data():
 
 def extract_data_from_html(html):
     """Extract pricing data from HTML using simple parsing."""
+    from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
 
     pricing_data = []
