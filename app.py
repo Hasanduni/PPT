@@ -3,37 +3,26 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
-import requests
 import os
 from dotenv import load_dotenv
+from transformers import pipeline
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Check if OpenAI API key exists, otherwise fallback to GPT-2 or Hugging Face
-openai_api_key = os.getenv('OPENAI_API_KEY')
+# Initialize Hugging Face text generation pipeline
+generator = pipeline('text-generation', model='gpt2')  # You can switch to a different model if needed
 
-# Define function for generating content
 def generate_api_content(topic, description):
-    """Fetch detailed content for the topic and description."""
-    if openai_api_key:
-        import openai
-        try:
-            # Use OpenAI API for content generation
-            prompt = f"Generate a detailed explanation for the topic: {topic}\nDescription: {description}"
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",  # You can adjust this to use GPT-4 if needed
-                messages=[{"role": "system", "content": "You are a helpful assistant."},
-                          {"role": "user", "content": prompt}],
-                max_tokens=150,
-                temperature=0.7,
-            )
-            return response['choices'][0]['message']['content']
-        except openai.error.OpenAIError as e:
-            return f"OpenAI request failed: {e}"
-    else:
-        # Fallback: GPT-2 model or other text generation methods (e.g., Hugging Face API)
-        return f"Generated content for {topic} based on description: {description}"
+    """Fetch detailed content for the topic and description using Hugging Face's GPT-2 model."""
+    prompt = f"Generate a detailed explanation for the topic: {topic}\nDescription: {description}"
+    
+    try:
+        # Use Hugging Face's GPT-2 model to generate content
+        generated = generator(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
+        return generated
+    except Exception as e:
+        return f"Content generation failed: {e}"
 
 def add_title_slide(prs, title, subtitle):
     """Add a title slide with a title and subtitle."""
@@ -110,4 +99,57 @@ def add_table_slide(prs, title):
         ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3", "Row 2, Col 4"]
     ]
 
-    for r
+    for row in range(rows):
+        for col in range(cols):
+            table.cell(row, col).text = data[row][col]
+
+def generate_presentation(topic, description, image_file=None):
+    """Generate a PowerPoint presentation based on user input."""
+    prs = Presentation()
+    add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
+
+    # Generate dynamic content using Hugging Face
+    generated_content = generate_api_content(topic, description)
+
+    add_text_box_slide(prs, "Detailed Content", generated_content)
+    add_chart_slide(prs, "Bar Chart Representation")
+    add_pie_chart_slide(prs, "Pie Chart Breakdown")
+    add_table_slide(prs, "Data Table")
+
+    if image_file:
+        add_image_slide(prs, "Uploaded Image", image_file)
+
+    filename = "generated_presentation.pptx"
+    prs.save(filename)
+    return filename
+
+
+# Streamlit UI
+st.title("📊 PowerPoint Generator")
+
+topic = st.text_input("Enter Topic:")
+description = st.text_area("Enter Description:")
+uploaded_image = st.file_uploader("Upload an image (optional)", type=["png", "jpg", "jpeg"])
+
+if st.button("Generate PPT"):
+    if topic and description:
+        img_path = None
+        if uploaded_image:
+            img_path = f"temp_{uploaded_image.name}"
+            with open(img_path, "wb") as f:
+                f.write(uploaded_image.getbuffer())
+
+        pptx_file = generate_presentation(topic, description, img_path)
+
+        with open(pptx_file, "rb") as file:
+            st.download_button(
+                label="📥 Download Presentation",
+                data=file,
+                file_name=pptx_file,
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            )
+
+        if img_path:
+            os.remove(img_path)  # Cleanup temp file
+    else:
+        st.warning("⚠️ Please enter both a topic and description.")
