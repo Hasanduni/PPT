@@ -10,7 +10,8 @@ import os
 HF_API_KEY = "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"  # Replace with your Hugging Face API Key
 
 def get_text_from_huggingface(prompt):
-    API_URL = "https://api-inference.huggingface.co/models/t5-small"
+    API_URL = API_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased"
+
     
     if not HF_API_KEY:
         print("Error: API key is missing.")
