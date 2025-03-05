@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_text_from_huggingface(prompt):
-    API_URL = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"
+    API_URL = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"API_URL = "https://api-inference.huggingface.co/models/t5-small"
+
     HF_API_KEY = os.getenv("HF_API_KEY")  # Load API key from environment variable
 
     if not HF_API_KEY:
