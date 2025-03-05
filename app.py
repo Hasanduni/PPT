@@ -11,35 +11,42 @@ GLAMA_AI_URL = "https://glama.ai/pricing"
 
 def fetch_pricing_data():
     """Fetch pricing details from Glama AI's website."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    }
+    
     try:
-        response = requests.get(GLAMA_AI_URL, timeout=10)
+        response = requests.get(GLAMA_AI_URL, headers=headers, timeout=10)
+        
         if response.status_code == 200:
             text = response.text
 
-            # Extract pricing details using regex (since we avoid BeautifulSoup)
+            # Extract pricing details using regex
             plans = re.findall(r'>(Starter|Pro|Business)<', text)
-            prices = re.findall(r'\$(\d+)[^<]*', text)  # Extracts prices like $26, $80
-            descriptions = re.findall(r'>(For .*?)<', text)  # Extract plan descriptions
-            features = re.findall(r'<li>(.*?)</li>', text)  # Extract feature list items
+            prices = re.findall(r'\$(\d+)[^<]*', text)
+            descriptions = re.findall(r'>(For .*?)<', text)
+            features = re.findall(r'<li>(.*?)</li>', text)
 
             if len(plans) != len(prices) or len(plans) != len(descriptions):
-                return None  # In case the format is different
+                return None
 
-            # Organize extracted details into a structured list
             pricing_data = []
             for i in range(len(plans)):
                 plan = plans[i]
                 price = f"${prices[i]}" if i < len(prices) else "Free"
                 description = descriptions[i]
-                feature_list = ", ".join(features[i*5:(i+1)*5])  # Assuming 5 features per plan
+                feature_list = ", ".join(features[i*5:(i+1)*5])  # Extracting 5 features per plan
                 pricing_data.append([plan, description, price, feature_list])
 
             return pricing_data
         else:
+            st.error(f"Failed to fetch data: Status Code {response.status_code}")
             return None
     except Exception as e:
         st.error(f"Error fetching pricing data: {e}")
         return None
+
 
 def add_title_slide(prs, title, subtitle):
     """Add a title slide with a title and subtitle."""
