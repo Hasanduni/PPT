@@ -7,7 +7,7 @@ import openai
 import os
 
 # Define your OpenAI API Key
-OPENAI_API_KEY = "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"  # Replace with your OpenAI API Key
+OPENAI_API_KEY = ""  # Replace with your OpenAI API Key
 
 # Initialize OpenAI client
 client = openai.Client(api_key=OPENAI_API_KEY)
