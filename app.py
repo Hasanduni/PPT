@@ -9,17 +9,18 @@ import os
 # Define your OpenAI API Key
 OPENAI_API_KEY = "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"  # Replace with your OpenAI API Key
 
-openai.api_key = OPENAI_API_KEY  # Set API Key
+# Initialize OpenAI client
+client = openai.Client(api_key=OPENAI_API_KEY)
 
 # Function to generate text from OpenAI API
 def get_text_from_openai(prompt):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Use gpt-4 if available
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Use "gpt-4" if needed
             messages=[{"role": "user", "content": prompt}],
             max_tokens=150
         )
-        return response['choices'][0]['message']['content']
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}"
 
