@@ -12,7 +12,7 @@ load_dotenv()
 
 # Retrieve the GlamaAI API key from environment variables
 glamaai_api_key = os.getenv('GLAMAAI_API_KEY')
-glamaai_api_url = 'https://api.glama.ai/v1/generate'  # Adjust based on GlamaAI's actual endpoint
+glamaai_api_url = 'https://glama.ai/api/gateway/openai/v1'  # Base URL for GlamaAI API
 
 def generate_api_content(topic, description):
     """Fetch detailed content for the topic and description from GlamaAI API."""
@@ -30,7 +30,7 @@ def generate_api_content(topic, description):
     }
 
     try:
-        response = requests.post(glamaai_api_url, json=data, headers=headers, timeout=30)
+        response = requests.post(glamaai_api_url + '/generate', json=data, headers=headers, timeout=30)
         response.raise_for_status()  # Raise HTTPError for bad responses
     except requests.exceptions.RequestException as e:
         st.error(f"Request failed: {e}")
