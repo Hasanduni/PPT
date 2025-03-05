@@ -5,14 +5,17 @@ from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
 import requests
 import os
+from huggingface_hub import login  # Import Hugging Face login function
 
-# Define your Hugging Face API Key directly (not from .env file)
-HF_API_KEY = "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"  # Replace with your Hugging Face API Key
+# Define your Hugging Face API Key
+HF_API_KEY = "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"  # Replace with your valid API Key
+
+# Log in to Hugging Face
+login(HF_API_KEY)
 
 def get_text_from_huggingface(prompt):
-    API_URL = API_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased"
+    API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
 
-    
     if not HF_API_KEY:
         print("Error: API key is missing.")
     else:
