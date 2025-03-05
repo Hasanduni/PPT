@@ -13,10 +13,13 @@ load_dotenv()
 def get_text_from_huggingface(prompt):
     API_URL = "https://api-inference.huggingface.co/models/t5-small"
 
-    HF_API_KEY = os.getenv("HF_API_KEY")  # Load API key from environment variable
+    
+    HF_API_KEY = os.getenv("HF_API_KEY")
 
     if not HF_API_KEY:
-        return "Error: API key is missing. Set HF_API_KEY in your .env file."
+        print("Error: API key is missing.")
+    else:
+        print("API Key Loaded Successfully:", HF_API_KEY[:5] + "****")  # Masking for security
 
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     payload = {"inputs": prompt}
