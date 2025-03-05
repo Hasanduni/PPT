@@ -1,153 +1,69 @@
 import streamlit as st
 import requests
 from pptx import Presentation
-from pptx.chart.data import CategoryChartData
-from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
-import os
-import re
 
+# ScraperAPI Key (Replace with your actual key)
+SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
 GLAMA_AI_URL = "https://glama.ai/pricing"
 
 def fetch_pricing_data():
-    """Fetch pricing details from Glama AI's website."""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-    }
+    """Fetch pricing data using ScraperAPI instead of Selenium."""
+    api_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}"
     
     try:
-        response = requests.get(GLAMA_AI_URL, headers=headers, timeout=10)
-        
+        response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
-            text = response.text
-
-            # Extract pricing details using regex
-            plans = re.findall(r'>(Starter|Pro|Business)<', text)
-            prices = re.findall(r'\$(\d+)[^<]*', text)
-            descriptions = re.findall(r'>(For .*?)<', text)
-            features = re.findall(r'<li>(.*?)</li>', text)
-
-            if len(plans) != len(prices) or len(plans) != len(descriptions):
-                return None
-
-            pricing_data = []
-            for i in range(len(plans)):
-                plan = plans[i]
-                price = f"${prices[i]}" if i < len(prices) else "Free"
-                description = descriptions[i]
-                feature_list = ", ".join(features[i*5:(i+1)*5])  # Extracting 5 features per plan
-                pricing_data.append([plan, description, price, feature_list])
-
-            return pricing_data
+            html_content = response.text
+            return extract_data_from_html(html_content)
         else:
-            st.error(f"Failed to fetch data: Status Code {response.status_code}")
             return None
     except Exception as e:
-        st.error(f"Error fetching pricing data: {e}")
         return None
 
+def extract_data_from_html(html):
+    """Extract pricing data from HTML using simple parsing."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
 
-def add_title_slide(prs, title, subtitle):
-    """Add a title slide with a title and subtitle."""
-    slide = prs.slides.add_slide(prs.slide_layouts[0])
-    slide.shapes.title.text = title
-    slide.placeholders[1].text = subtitle
+    pricing_data = []
+    plans = soup.find_all("h3")
+    prices = soup.find_all("span", class_="price")
+    descriptions = soup.find_all("p")
+    
+    for i in range(min(len(plans), len(prices), len(descriptions))):
+        plan = plans[i].get_text(strip=True)
+        price = prices[i].get_text(strip=True)
+        description = descriptions[i].get_text(strip=True)
+        pricing_data.append([plan, description, price])
 
-def add_text_box_slide(prs, title, text):
-    """Add a slide with a text box."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-    textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
-    textbox.text_frame.text = text
+    return pricing_data
 
-def add_table_slide(prs, title, data):
-    """Add a table slide with provided data."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-
-    rows, cols = len(data) + 1, len(data[0])
-    left, top, width, height = Inches(1), Inches(1.5), Inches(8), Inches(0.8 + 0.5 * rows)
-
-    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
-
-    # Set column widths
-    for i in range(cols):
-        table.columns[i].width = Inches(2)
-
-    # Set headers
-    headers = ["Plan", "Description", "Price", "Features"]
-    for col_idx, header in enumerate(headers):
-        table.cell(0, col_idx).text = header
-
-    # Add data to table
-    for row_idx, row_data in enumerate(data, start=1):
-        for col_idx, value in enumerate(row_data):
-            table.cell(row_idx, col_idx).text = value
-
-def add_chart_slide(prs, title, categories, values):
-    """Add a bar chart slide."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-
-    chart_data = CategoryChartData()
-    chart_data.categories = categories
-    chart_data.add_series('Price (USD)', values)
-
-    chart = slide.shapes.add_chart(
-        XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), Inches(1.5), Inches(8), Inches(4.5), chart_data
-    ).chart
-    chart.has_legend = True
-    chart.legend.position = XL_LEGEND_POSITION.BOTTOM
-
-def add_image_slide(prs, title, img_path):
-    """Add a slide with an image."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-    slide.shapes.add_picture(img_path, Inches(1), Inches(1.5), width=Inches(6), height=Inches(4))
-
-def generate_presentation(topic, description, pricing_data, image_file=None):
-    """Generate a PowerPoint presentation based on fetched data."""
+def generate_presentation(pricing_data):
+    """Generate PowerPoint presentation with extracted pricing data."""
     prs = Presentation()
-    add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
+    slide = prs.slides.add_slide(prs.slide_layouts[0])
+    slide.shapes.title.text = "Glama AI Pricing Plans"
+    slide.placeholders[1].text = "Generated using Streamlit & ScraperAPI"
 
-    add_text_box_slide(prs, "Introduction", description)
+    for plan, desc, price in pricing_data:
+        slide = prs.slides.add_slide(prs.slide_layouts[5])
+        slide.shapes.title.text = plan
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
+        textbox.text_frame.text = f"{desc}\nPrice: {price}"
 
-    if pricing_data:
-        add_table_slide(prs, "Glama AI Pricing Plans", pricing_data)
-
-        # Bar Chart Data (exclude free plan)
-        categories = [plan[0] for plan in pricing_data if plan[2] != "Free"]
-        values = [int(plan[2][1:]) for plan in pricing_data if plan[2] != "Free"]
-        add_chart_slide(prs, "Pricing Comparison", categories, values)
-
-    if image_file:
-        add_image_slide(prs, "Uploaded Image", image_file)
-
-    filename = "glama_ai_presentation.pptx"
+    filename = "Glama_AI_Pricing.pptx"
     prs.save(filename)
     return filename
 
 # Streamlit UI
-st.title("📊 Glama AI PowerPoint Generator (Live Data)")
-
-topic = st.text_input("Enter Topic:", "Glama AI Overview")
-description = st.text_area("Enter Description:", "An overview of Glama AI's latest pricing plans.")
-uploaded_image = st.file_uploader("Upload an image (optional)", type=["png", "jpg", "jpeg"])
+st.title("📊 Glama AI Pricing PPT Generator (ScraperAPI Version)")
 
 if st.button("Fetch & Generate PPT"):
-    st.info("Fetching latest pricing details...")
     pricing_data = fetch_pricing_data()
-
+    
     if pricing_data:
-        st.success("Pricing data successfully retrieved!")
-        img_path = None
-        if uploaded_image:
-            img_path = f"temp_{uploaded_image.name}"
-            with open(img_path, "wb") as f:
-                f.write(uploaded_image.getbuffer())
-
-        pptx_file = generate_presentation(topic, description, pricing_data, img_path)
+        pptx_file = generate_presentation(pricing_data)
 
         with open(pptx_file, "rb") as file:
             st.download_button(
@@ -156,8 +72,5 @@ if st.button("Fetch & Generate PPT"):
                 file_name=pptx_file,
                 mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             )
-
-        if img_path:
-            os.remove(img_path)  # Cleanup temp file
     else:
         st.error("Failed to fetch pricing data. Please check the website or try again later.")
