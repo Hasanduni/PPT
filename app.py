@@ -3,7 +3,39 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
+import requests
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the GlamaAI API key from environment variables
+glamaai_api_key = os.getenv('GLAMAAI_API_KEY')
+glamaai_api_url = 'https://api.glama.ai/v1/generate'  # Adjust based on GlamaAI's actual endpoint
+
+def generate_api_content(topic, description):
+    """Fetch detailed content for the topic and description from GlamaAI API."""
+    prompt = f"Generate a detailed explanation for the topic: {topic}\nDescription: {description}"
+
+    headers = {
+        'Authorization': f'Bearer {glamaai_api_key}',
+        'Content-Type': 'application/json',
+    }
+
+    data = {
+        'prompt': prompt,
+        'max_tokens': 150,
+        'temperature': 0.7
+    }
+
+    response = requests.post(glamaai_api_url, json=data, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()['text']  # Assuming the response contains a 'text' field
+    else:
+        st.error("Error fetching content from GlamaAI API.")
+        return "Content generation failed. Please try again."
 
 def add_title_slide(prs, title, subtitle):
     """Add a title slide with a title and subtitle."""
@@ -89,6 +121,10 @@ def generate_presentation(topic, description, image_file=None):
     prs = Presentation()
     add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
 
+    # Generate dynamic content from GlamaAI
+    generated_content = generate_api_content(topic, description)
+
+    add_text_box_slide(prs, "Detailed Content from GlamaAI", generated_content)
     add_chart_slide(prs, "Bar Chart Representation")
     add_pie_chart_slide(prs, "Pie Chart Breakdown")
     add_table_slide(prs, "Data Table")
