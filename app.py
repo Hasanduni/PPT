@@ -5,17 +5,13 @@ from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
 import requests
 import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Define your Hugging Face API Key directly (not from .env file)
+HF_API_KEY = "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"  # Replace with your Hugging Face API Key
 
 def get_text_from_huggingface(prompt):
     API_URL = "https://api-inference.huggingface.co/models/t5-small"
-
     
-    HF_API_KEY = os.getenv("HF_API_KEY")
-
     if not HF_API_KEY:
         print("Error: API key is missing.")
     else:
