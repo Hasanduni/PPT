@@ -29,7 +29,7 @@ def generate_api_content(topic, description):
         'temperature': 0.7
     }
 
-    response = requests.post(glamaai_api_url, json=data, headers=headers)
+    response = requests.post(glamaai_api_url, json=data, headers=headers, timeout=10)
 
     if response.status_code == 200:
         return response.json()['text']  # Assuming the response contains a 'text' field
