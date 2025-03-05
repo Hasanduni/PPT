@@ -12,8 +12,7 @@ load_dotenv()
 
 # Retrieve the GlamaAI API key from environment variables
 glamaai_api_key = os.getenv('GLAMAAI_API_KEY')
-glamaai_api_url = 'https://glama.ai/api/gateway/openai/v1'  # Base URL for GlamaAI API
-
+glamaai_api_url = 'https://glama.ai/api/gateway/openai/v1/chat/completions'  # Corrected endpoint for content generation
 def generate_api_content(topic, description):
     """Fetch detailed content for the topic and description from GlamaAI API."""
     prompt = f"Generate a detailed explanation for the topic: {topic}\nDescription: {description}"
@@ -24,25 +23,32 @@ def generate_api_content(topic, description):
     }
 
     data = {
-        'prompt': prompt,
+        'model': 'gpt-3.5-turbo',  # Adjust this model based on the available models in the GlamaAI system
+        'messages': [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ],
         'max_tokens': 150,
         'temperature': 0.7
     }
 
     try:
-        response = requests.post(glamaai_api_url + '/generate', json=data, headers=headers, timeout=30)
+        response = requests.post(glamaai_api_url, json=data, headers=headers, timeout=30)
         response.raise_for_status()  # Raise HTTPError for bad responses
     except requests.exceptions.RequestException as e:
-        st.error(f"Request failed: {e}")
-        return "Content generation failed. Please try again."
+        print(f"Request failed: {e}")
+        return f"Error details: {e}"
 
+    # Log full response for debugging
+    print(f"Response Status Code: {response.status_code}")
+    print(f"Response Text: {response.text}")
 
     if response.status_code == 200:
-        return response.json()['text']  # Assuming the response contains a 'text' field
+        return response.json()['choices'][0]['message']['content']  # Extracting response text
     else:
-        st.error("Error fetching content from GlamaAI API.")
+        print(f"API returned an error: {response.text}")
         return "Content generation failed. Please try again."
-
+        
 def add_title_slide(prs, title, subtitle):
     """Add a title slide with a title and subtitle."""
     slide = prs.slides.add_slide(prs.slide_layouts[0])
