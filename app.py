@@ -3,23 +3,29 @@ import requests
 from pptx import Presentation
 from pptx.util import Inches
 
-# ScraperAPI Key (Replace with your actual key)
-SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
-GLAMA_AI_URL = "https://glama.ai/pricing"
+
+
+import requests
 
 def fetch_pricing_data():
     """Fetch pricing data using ScraperAPI or ScrapingBee."""
+   # ScraperAPI Key (Replace with your actual key)
+    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
+    GLAMA_AI_URL = "https://glama.ai/pricing"
+    # Corrected URL for ScrapingBee
+    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={API_KEY}&url={GLAMA_AI_URL}&render_js=True"
+    
     try:
         response = requests.get(api_url, timeout=10)
-        print(response.status_code)
-        print(response.text[:500])  # Print the first 500 characters of the response to debug
+        print(response.status_code)  # Debugging step to check status code
+        print(response.text[:500])  # Print the first 500 characters of the response for debugging
+
         if response.status_code == 200:
             return extract_data_from_html(response.text)
         else:
-            st.error(f"Failed with status code: {response.status_code}")
             return None
     except Exception as e:
-        st.error(f"Error: {e}")
+        print(f"Error: {e}")
         return None
 
 
