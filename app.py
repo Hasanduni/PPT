@@ -3,153 +3,61 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
+import requests
 import os
-from dotenv import load_dotenv
-from transformers import pipeline
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Initialize Hugging Face text generation pipeline
-generator = pipeline('text-generation', model='gpt2')  # You can switch to a different model if needed
-
-def generate_api_content(topic, description):
-    """Fetch detailed content for the topic and description using Hugging Face's GPT-2 model."""
-    prompt = f"Generate a detailed explanation for the topic: {topic}\nDescription: {description}"
-    
-    try:
-        # Use Hugging Face's GPT-2 model to generate content
-        generated = generator(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
-        return generated
-    except Exception as e:
-        return f"Content generation failed: {e}"
+def get_text_from_huggingface(prompt):
+    API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+    HF_API_KEY = os.getenv("HF_API_KEY")  # Load from environment variable
+    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    if response.status_code == 200:
+        return response.json()[0]['summary_text']
+    else:
+        return "Error generating text. Try again later."
 
 def add_title_slide(prs, title, subtitle):
-    """Add a title slide with a title and subtitle."""
     slide = prs.slides.add_slide(prs.slide_layouts[0])
     slide.shapes.title.text = title
     slide.placeholders[1].text = subtitle
 
-def add_chart_slide(prs, title):
-    """Add a sample bar chart slide."""
+def add_chart_slide(prs, title, chart_data):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
-
-    chart_data = CategoryChartData()
-    chart_data.categories = ['A', 'B', 'C']
-    chart_data.add_series('Series 1', (10, 20, 30))
-
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), Inches(1.5), Inches(6), Inches(4.5), chart_data
     ).chart
     chart.has_legend = True
     chart.legend.position = XL_LEGEND_POSITION.BOTTOM
 
-def add_pie_chart_slide(prs, title):
-    """Add a sample pie chart slide."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-
-    chart_data = CategoryChartData()
-    chart_data.categories = ['X', 'Y', 'Z']
-    chart_data.add_series('Series 1', (40, 30, 30))
-
-    chart = slide.shapes.add_chart(
-        XL_CHART_TYPE.PIE, Inches(1), Inches(1.5), Inches(6), Inches(4.5), chart_data
-    ).chart
-    chart.has_legend = True
-    chart.legend.position = XL_LEGEND_POSITION.RIGHT
-
 def add_text_box_slide(prs, title, text):
-    """Add a slide with a text box."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
 
-def add_image_slide(prs, title, img_path):
-    """Add a slide with an image."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-    slide.shapes.add_picture(img_path, Inches(1), Inches(1.5), width=Inches(6), height=Inches(4))
-
-def add_table_slide(prs, title):
-    """Add a slide with a table."""
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = title
-
-    # Create a table with 3 rows and 4 columns
-    rows = 3
-    cols = 4
-    left = Inches(1)
-    top = Inches(1.5)
-    width = Inches(6)
-    height = Inches(3)
-
-    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
-
-    # Set column widths
-    for col in range(cols):
-        table.columns[col].width = Inches(1.5)
-
-    # Populate the table with sample data
-    data = [
-        ["Header 1", "Header 2", "Header 3", "Header 4"],
-        ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3", "Row 1, Col 4"],
-        ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3", "Row 2, Col 4"]
-    ]
-
-    for row in range(rows):
-        for col in range(cols):
-            table.cell(row, col).text = data[row][col]
-
-def generate_presentation(topic, description, image_file=None):
-    """Generate a PowerPoint presentation based on user input."""
+def generate_presentation(topic):
     prs = Presentation()
-    add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
-
-    # Generate dynamic content using Hugging Face
-    generated_content = generate_api_content(topic, description)
-
-    add_text_box_slide(prs, "Detailed Content", generated_content)
-    add_chart_slide(prs, "Bar Chart Representation")
-    add_pie_chart_slide(prs, "Pie Chart Breakdown")
-    add_table_slide(prs, "Data Table")
-
-    if image_file:
-        add_image_slide(prs, "Uploaded Image", image_file)
-
+    add_title_slide(prs, topic, "Generated using Streamlit and python-pptx")
+    
+    description = get_text_from_huggingface(f"Generate a brief summary about {topic}")
+    
+    chart_data = CategoryChartData()
+    chart_data.categories = ['A', 'B', 'C']
+    chart_data.add_series('Series 1', (10, 20, 30))
+    add_chart_slide(prs, "Sample Chart", chart_data)
+    
+    add_text_box_slide(prs, "About " + topic, description)
+    
     filename = "generated_presentation.pptx"
     prs.save(filename)
     return filename
 
-
-# Streamlit UI
-st.title("📊 PowerPoint Generator")
-
+st.title("📊 Generate PowerPoint Presentation")
 topic = st.text_input("Enter Topic:")
-description = st.text_area("Enter Description:")
-uploaded_image = st.file_uploader("Upload an image (optional)", type=["png", "jpg", "jpeg"])
-
 if st.button("Generate PPT"):
-    if topic and description:
-        img_path = None
-        if uploaded_image:
-            img_path = f"temp_{uploaded_image.name}"
-            with open(img_path, "wb") as f:
-                f.write(uploaded_image.getbuffer())
-
-        pptx_file = generate_presentation(topic, description, img_path)
-
+    if topic:
+        pptx_file = generate_presentation(topic)
         with open(pptx_file, "rb") as file:
-            st.download_button(
-                label="📥 Download Presentation",
-                data=file,
-                file_name=pptx_file,
-                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            )
-
-        if img_path:
-            os.remove(img_path)  # Cleanup temp file
+            st.download_button(label="📥 Download Presentation", data=file, file_name=pptx_file, mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
     else:
-        st.warning("⚠️ Please enter both a topic and description.")
+        st.warning("⚠️ Please enter a topic.")
