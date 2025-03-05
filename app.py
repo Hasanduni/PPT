@@ -48,22 +48,47 @@ def add_text_box_slide(prs, title, text):
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
 
-
-
-
-
 def add_image_slide(prs, title, img_path):
     """Add a slide with an image."""
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
     slide.shapes.add_picture(img_path, Inches(1), Inches(1.5), width=Inches(6), height=Inches(4))
 
+def add_table_slide(prs, title):
+    """Add a slide with a table."""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    slide.shapes.title.text = title
+
+    # Create a table with 3 rows and 4 columns
+    rows = 3
+    cols = 4
+    left = Inches(1)
+    top = Inches(1.5)
+    width = Inches(6)
+    height = Inches(3)
+
+    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
+
+    # Set column widths
+    for col in range(cols):
+        table.columns[col].width = Inches(1.5)
+
+    # Populate the table with sample data
+    data = [
+        ["Header 1", "Header 2", "Header 3", "Header 4"],
+        ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3", "Row 1, Col 4"],
+        ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3", "Row 2, Col 4"]
+    ]
+
+    for row in range(rows):
+        for col in range(cols):
+            table.cell(row, col).text = data[row][col]
+
 def generate_presentation(topic, description, image_file=None):
     """Generate a PowerPoint presentation based on user input."""
     prs = Presentation()
     add_title_slide(prs, topic, "Generated using Streamlit & python-pptx")
 
-    
     add_chart_slide(prs, "Bar Chart Representation")
     add_pie_chart_slide(prs, "Pie Chart Breakdown")
     add_table_slide(prs, "Data Table")
