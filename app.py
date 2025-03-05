@@ -3,41 +3,34 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches
-import requests
+import openai
 import os
-from huggingface_hub import login  # Import Hugging Face login function
 
-# Define your Hugging Face API Key
-HF_API_KEY = "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"  # Replace with your valid API Key
+# Define your OpenAI API Key
+OPENAI_API_KEY = "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"  # Replace with your OpenAI API Key
 
-# Log in to Hugging Face
-login(HF_API_KEY)
+openai.api_key = OPENAI_API_KEY  # Set API Key
 
-def get_text_from_huggingface(prompt):
-    API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
-
-    if not HF_API_KEY:
-        print("Error: API key is missing.")
-    else:
-        print("API Key Loaded Successfully:", HF_API_KEY[:5] + "****")  # Masking for security
-
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-    payload = {"inputs": prompt}
-
+# Function to generate text from OpenAI API
+def get_text_from_openai(prompt):
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
-        summary = response.json()
-        return summary[0].get("summary_text", "Error: Unexpected response format.")
-    except requests.exceptions.RequestException as e:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Use gpt-4 if available
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
         return f"Error: {str(e)}"
 
+# Function to add title slide
 def add_title_slide(prs, title, subtitle):
     slide = prs.slides.add_slide(prs.slide_layouts[0])
     slide.shapes.title.text = title
     if slide.placeholders and len(slide.placeholders) > 1:
         slide.placeholders[1].text = subtitle
 
+# Function to add a chart slide
 def add_chart_slide(prs, title, chart_data):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
@@ -47,18 +40,22 @@ def add_chart_slide(prs, title, chart_data):
     chart.has_legend = True
     chart.legend.position = XL_LEGEND_POSITION.BOTTOM
 
+# Function to add text box slide
 def add_text_box_slide(prs, title, text):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = title
     textbox = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(6), Inches(4))
     textbox.text_frame.text = text
 
+# Function to generate a PowerPoint presentation
 def generate_presentation(topic):
     prs = Presentation()
     add_title_slide(prs, topic, "Generated using Streamlit and python-pptx")
     
-    description = get_text_from_huggingface(f"Generate a brief summary about {topic}")
+    # Generate text summary using OpenAI
+    description = get_text_from_openai(f"Generate a brief summary about {topic}")
     
+    # Sample chart data
     chart_data = CategoryChartData()
     chart_data.categories = ['A', 'B', 'C']
     chart_data.add_series('Series 1', (10, 20, 30))
@@ -70,7 +67,8 @@ def generate_presentation(topic):
     prs.save(filename)
     return filename
 
-st.title("📊 Generate PowerPoint Presentation")
+# Streamlit UI
+st.title("📊 Generate PowerPoint Presentation with OpenAI")
 topic = st.text_input("Enter Topic:")
 
 if st.button("Generate PPT"):
