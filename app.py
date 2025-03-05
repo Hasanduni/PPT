@@ -13,25 +13,38 @@ def fetch_pricing_data():
     
     try:
         response = requests.get(api_url, timeout=10)
-        print(response.status_code)  # Debugging step to check status code
-        print(response.text[:500])  # Print the first 500 characters of the response for debugging
-
+        
+        # Print debugging details
+        print("Status Code:", response.status_code)  # Debugging step to check status code
+        print("Response Text (First 500 chars):", response.text[:500])  # Print first 500 characters
+        
         if response.status_code == 200:
-            return extract_data_from_html(response.text)  # Replace this with your actual data extraction function
+            # Check if the data is valid and contains expected HTML structure
+            if "pricing" in response.text:
+                return extract_data_from_html(response.text)  # Proceed with extraction if valid
+            else:
+                print("Error: Pricing data not found in response")
+                return None
         else:
             print(f"Failed with status code: {response.status_code}")
             return None
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error during request: {e}")
         return None
 
 # Function to extract pricing data from the HTML response using BeautifulSoup
 def extract_data_from_html(html):
     soup = BeautifulSoup(html, "html.parser")
     pricing_data = []
+    
+    # Check if we can find the expected elements
     plans = soup.find_all("h3")
     prices = soup.find_all("span", class_="price")
     descriptions = soup.find_all("p")
+    
+    if not plans or not prices or not descriptions:
+        print("Error: Couldn't find the expected HTML elements for pricing")
+        return None
     
     for i in range(min(len(plans), len(prices), len(descriptions))):
         plan = plans[i].get_text(strip=True)
