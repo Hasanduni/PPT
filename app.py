@@ -5,18 +5,18 @@ from pptx.util import Inches
 from bs4 import BeautifulSoup
 
 def fetch_pricing_data():
-    """Fetch pricing data using ScraperAPI or ScrapingBee."""
-    # ScraperAPI Key (Replace with your actual key)
-    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
+    """Fetch pricing data using ScraperAPI."""
+    SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"  # Use your actual ScraperAPI key
     GLAMA_AI_URL = "https://glama.ai/pricing"
     
-    # Corrected URL for ScrapingBee
-    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render_js=True"
+    # ScraperAPI URL format
+    api_url = f"https://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render=true"
     
     try:
         response = requests.get(api_url, timeout=10)
-        print(response.status_code)  # Debugging step to check status code
-        print(response.text[:500])  # Print the first 500 characters of the response for debugging
+        print(f"Response Status Code: {response.status_code}")  # Check the status code
+        print(f"Response Headers: {response.headers}")  # Print response headers
+        print(f"Response Text: {response.text[:500]}")  # Print first 500 characters of response text for debugging
 
         if response.status_code == 200:
             return extract_data_from_html(response.text)  # Replace this with your actual data extraction function
