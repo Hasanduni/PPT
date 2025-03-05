@@ -2,19 +2,16 @@ import streamlit as st
 import requests
 from pptx import Presentation
 from pptx.util import Inches
-
-
-
-import requests
+from bs4 import BeautifulSoup
 
 def fetch_pricing_data():
     """Fetch pricing data using ScraperAPI or ScrapingBee."""
-   # ScraperAPI Key (Replace with your actual key)
+    # ScraperAPI Key (Replace with your actual key)
     SCRAPER_API_KEY = "7b7d6359172aa8d26d022034260b0089"
     GLAMA_AI_URL = "https://glama.ai/pricing"
     
     # Corrected URL for ScrapingBee
-    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={API_KEY}&url={GLAMA_AI_URL}&render_js=True"
+    api_url = f"https://app.scrapingbee.com/api/v1/?api_key={SCRAPER_API_KEY}&url={GLAMA_AI_URL}&render_js=True"
     
     try:
         response = requests.get(api_url, timeout=10)
@@ -30,11 +27,8 @@ def fetch_pricing_data():
         print(f"Error: {e}")
         return None
 
-
-
 def extract_data_from_html(html):
     """Extract pricing data from HTML using simple parsing."""
-    from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
 
     pricing_data = []
