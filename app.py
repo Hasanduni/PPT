@@ -8,12 +8,23 @@ import os
 
 def get_text_from_huggingface(prompt):
     API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
-    HF_API_KEY = os.getenv("HF_API_KEY")  # Load from environment variable
+    HF_API_KEY = os.getenv("HF_API_KEY")  # Load API key from environment variable
+    
+    if not HF_API_KEY:
+        return "Error: API key is missing."
+
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    payload = {"inputs": prompt}
+
+    response = requests.post(API_URL, headers=headers, json=payload)
+
     if response.status_code == 200:
-        return response.json()[0]['summary_text']
+        try:
+            return response.json()[0]['summary_text']
+        except (KeyError, IndexError):
+            return "Error: Unexpected response format."
     else:
-        return "Error generating text. Try again later."
+        return f"Error: {response.status_code} - {response.text}"
 
 def add_title_slide(prs, title, subtitle):
     slide = prs.slides.add_slide(prs.slide_layouts[0])
@@ -54,6 +65,7 @@ def generate_presentation(topic):
 
 st.title("📊 Generate PowerPoint Presentation")
 topic = st.text_input("Enter Topic:")
+
 if st.button("Generate PPT"):
     if topic:
         pptx_file = generate_presentation(topic)
